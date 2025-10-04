@@ -10,9 +10,9 @@ COPY agent/package*.json ./agent/
 COPY package*.json ./
 
 # Install dependencies
-RUN cd server && npm ci --only=production
-RUN cd agent && npm ci --only=production
-RUN npm ci --only=production
+RUN cd server && npm ci
+RUN cd agent && npm ci
+RUN npm ci
 
 # Copy source code
 COPY server/ ./server/

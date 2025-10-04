@@ -12,7 +12,8 @@ import Deployments from './ui/Deployments'
 import DeployPage from './ui/DeployPage'
 
 const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
+  { path: '/', element: <App /> }, // Main dashboard as default
+  { path: '/landing', element: <LandingPage /> },
   { path: '/about', element: <AboutPage /> },
   { path: '/signup', element: <Register /> },
   { path: '/dashboard', element: <App /> },

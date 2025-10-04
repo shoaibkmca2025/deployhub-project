@@ -1,241 +1,180 @@
 # DeployHub - Self-Hosted CI/CD Platform
 
-A modern, self-hosted CI/CD platform that transforms your personal devices into a powerful deployment infrastructure.
+DeployHub is a modern, self-hosted CI/CD platform that allows you to deploy applications on your own hardware. Transform your laptops, Raspberry Pi, and servers into a powerful deployment infrastructure.
+
+## 🚀 Features
+
+- **Self-Hosted**: Deploy on your own hardware, maintain full control
+- **Multi-Platform**: Support for Windows, macOS, and Linux agents
+- **Real-Time Monitoring**: Live deployment logs and hardware metrics
+- **Modern UI**: Beautiful, responsive dashboard with real-time updates
+- **Easy Setup**: Simple installation and configuration
+- **Docker Support**: Containerized deployment for easy management
+
+## 📋 Prerequisites
+
+- Node.js 18+ 
+- Docker and Docker Compose
+- Git
+
+## 🛠️ Quick Start
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd deployhub-project
+```
+
+### 2. Install Dependencies
+```bash
+# Install all dependencies
+npm run install-all
+```
+
+### 3. Start Development Environment
+```bash
+# Start with Docker Compose
+npm run dev
+
+# Or start services individually
+npm run dev:frontend  # Frontend on port 3000
+npm run dev:backend   # Backend on port 4000
+```
+
+### 4. Access the Dashboard
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:4000
+- Health Check: http://localhost:4000/health
 
 ## 🏗️ Project Structure
 
 ```
 deployhub-project/
-├── frontend/                 # Frontend application
-│   ├── web/                 # React application
-│   ├── *.html               # Static HTML pages
-│   ├── main.js              # Main JavaScript file
-│   ├── Dockerfile           # Production Docker image
-│   ├── Dockerfile.dev       # Development Docker image
-│   ├── nginx.conf           # Nginx configuration
-│   └── package.json         # Frontend dependencies
 ├── backend/                 # Backend services
-│   ├── server/              # Express API server
-│   ├── agent/               # Deployment agent
-│   ├── Dockerfile           # Production Docker image
-│   ├── Dockerfile.dev       # Development Docker image
-│   └── package.json         # Backend dependencies
-├── docker-compose.yml       # Production deployment
-├── docker-compose.dev.yml   # Development deployment
-├── deploy.sh               # Linux/Mac deployment script
-├── deploy.bat              # Windows deployment script
-└── package.json            # Root project configuration
+│   ├── server/             # Main API server
+│   └── agent/              # Agent service
+├── frontend/               # Frontend application
+│   ├── web/               # React/Vite frontend
+│   ├── *.html             # Static HTML pages
+│   └── main.js            # Main JavaScript
+├── docs/                  # Documentation
+├── docker-compose.yml     # Production setup
+└── docker-compose.dev.yml # Development setup
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Git
-
-### Production Deployment
-
-```bash
-# Using deployment script (recommended)
-./deploy.sh prod
-
-# Or using npm scripts
-npm run deploy
-
-# Or using Docker Compose directly
-docker-compose up -d --build
-```
-
-### Development Environment
-
-```bash
-# Using deployment script
-./deploy.sh dev
-
-# Or using npm scripts
-npm run dev
-
-# Or using Docker Compose directly
-docker-compose -f docker-compose.dev.yml up --build
-```
-
-## 📋 Available Commands
-
-### Root Level Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development environment with Docker |
-| `npm run dev:frontend` | Start frontend in development mode |
-| `npm run dev:backend` | Start backend in development mode |
-| `npm run build` | Build all Docker images |
-| `npm run start` | Start production environment |
-| `npm run stop` | Stop all services |
-| `npm run restart` | Restart all services |
-| `npm run logs` | Show logs from all services |
-| `npm run logs:frontend` | Show frontend logs only |
-| `npm run logs:backend` | Show backend logs only |
-| `npm run clean` | Clean up containers and volumes |
-| `npm run deploy` | Deploy production environment |
-
-### Deployment Script Commands
-
-```bash
-# Linux/Mac
-./deploy.sh [command]
-
-# Windows
-deploy.bat [command]
-
-# Available commands:
-# dev, prod, stop, restart, logs, clean, build, status
-```
-
-## 🌐 Service URLs
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:4000
-- **Agent**: http://localhost:3001
-
-## 🐳 Docker Services
-
-### Frontend Service
-- **Port**: 3000
-- **Technology**: Nginx + React
-- **Build**: Multi-stage build with Node.js and Nginx
-
-### Backend Service
-- **Ports**: 4000 (API), 3001 (Agent)
-- **Technology**: Node.js + Express + Socket.IO
-- **Components**: API server + Deployment agent
-
-## 🔧 Development
-
-### Local Development (without Docker)
-
-```bash
-# Install all dependencies
-npm run install-all
-
-# Start frontend
-npm run dev:frontend
-
-# Start backend (in another terminal)
-npm run dev:backend
-```
-
-### Docker Development
-
-```bash
-# Start development environment
-npm run dev
-
-# View logs
-npm run logs
-
-# Stop services
-npm run stop
-```
-
-## 📦 Building for Production
-
-```bash
-# Build all images
-npm run build
-
-# Deploy to production
-npm run deploy
-```
-
-## 🧹 Cleanup
-
-```bash
-# Clean containers and volumes
-npm run clean
-
-# Clean everything (including images)
-npm run clean:all
-```
-
-## 🔍 Monitoring and Logs
-
-```bash
-# View all logs
-npm run logs
-
-# View specific service logs
-npm run logs:frontend
-npm run logs:backend
-
-# Check service status
-./deploy.sh status
-```
-
-## 🛠️ Configuration
+## 🔧 Configuration
 
 ### Environment Variables
 
-Create `.env` files in respective directories:
-
-**Frontend (.env)**
-```
-NODE_ENV=production
-REACT_APP_API_URL=http://localhost:4000
-```
-
-**Backend (.env)**
-```
-NODE_ENV=production
-PORT=4000
-AGENT_PORT=3001
+Create a `.env` file in `frontend/web/`:
+```env
+VITE_SERVER_ORIGIN=http://localhost:4000
+VITE_APP_NAME=DeployHub
+VITE_APP_VERSION=1.0.0
 ```
 
-### Docker Configuration
+### Backend Configuration
 
-- **Production**: Uses optimized multi-stage builds
-- **Development**: Uses volume mounts for hot reloading
-- **Networking**: Services communicate via Docker network
+The backend automatically detects the environment and configures CORS accordingly.
 
-## 🚨 Troubleshooting
+## 📱 Usage
 
-### Common Issues
+### 1. Connect Hardware
+1. Go to the Hardware page
+2. Download the appropriate agent for your platform
+3. Install and run the agent on your device
+4. Your device will appear in the dashboard
 
-1. **Port conflicts**: Ensure ports 3000, 4000, and 3001 are available
-2. **Docker not running**: Start Docker Desktop
-3. **Permission issues**: Run with appropriate permissions
+### 2. Deploy Applications
+1. Go to the Deployments page
+2. Click "New Deployment"
+3. Enter your GitHub repository URL
+4. Configure build and start commands
+5. Select target device
+6. Deploy!
 
-### Debug Commands
+### 3. Monitor Deployments
+- View real-time logs
+- Monitor resource usage
+- Restart/stop deployments
+- Track deployment history
 
+## 🐳 Docker Deployment
+
+### Production
 ```bash
-# Check Docker status
-docker ps
+# Build and start all services
+docker-compose up -d --build
 
-# Check service logs
-docker-compose logs [service-name]
+# View logs
+docker-compose logs -f
 
-# Restart specific service
-docker-compose restart [service-name]
-
-# Rebuild specific service
-docker-compose up --build [service-name]
+# Stop services
+docker-compose down
 ```
 
-## 📚 Additional Resources
+### Development
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yml up --build
+```
 
-- [Architecture Documentation](docs/Architecture.md)
-- [Deployment Guide](docs/DeploymentGuide.md)
-- [Agent Setup](docs/AgentSetup.md)
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/signup` - User registration
+- `POST /api/login` - User login
+
+### Deployments
+- `GET /api/deployments` - List deployments
+- `POST /api/deploy` - Create deployment
+- `POST /api/deployments/:id/action` - Control deployment (start/stop/restart)
+- `DELETE /api/deployments/:id` - Delete deployment
+
+### Agents
+- `GET /api/agents` - List connected agents
+- `GET /api/status` - System status
+
+### Deployment Links
+- `POST /api/generate-link` - Generate deployment link
+- `GET /api/deploy/:linkId` - Get deployment configuration
+
+## 🛡️ Security
+
+- JWT-based authentication
+- CORS protection
+- Input validation
+- Environment variable security
+
+## 📊 Monitoring
+
+- Real-time hardware metrics
+- Deployment logs
+- System health checks
+- Performance analytics
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test with `npm run dev`
-5. Submit a pull request
+4. Submit a pull request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License - see LICENSE file for details
+
+## 🆘 Support
+
+For support and questions:
+- Check the documentation in `/docs`
+- Open an issue on GitHub
+- Review the API documentation
+
+## 🔄 Updates
+
+The project is actively maintained with regular updates and improvements.
+
+---
+
+**DeployHub** - Empowering developers to deploy anywhere, on their own terms.

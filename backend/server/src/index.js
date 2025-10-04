@@ -14,20 +14,14 @@ const app = express();
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://deployhub-frontend.onrender.com',
-        'https://your-frontend-url.onrender.com',
-        /^https:\/\/.*\.onrender\.com$/
+       'http://localhost:3000', 
+        'http://localhost:5173', 
+        "https://deployhub-frontend.onrender.com"
       ] 
     : [
         'http://localhost:3000', 
         'http://localhost:5173', 
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5173',
-        'http://10.136.64.168:3000',
-        'http://10.136.64.168:5173',
-        /^http:\/\/localhost:\d+$/,
-        /^http:\/\/127\.0\.0\.1:\d+$/,
-        /^http:\/\/10\.136\.64\.168:\d+$/
+       "https://deployhub-frontend.onrender.com"
       ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -48,20 +42,12 @@ const io = new SocketIOServer(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
       ? [
-          'https://deployhub-frontend.onrender.com',
-          'https://your-frontend-url.onrender.com',
-          /^https:\/\/.*\.onrender\.com$/
+          "https://deployhub-frontend.onrender.com"
         ] 
       : [
           'http://localhost:3000', 
           'http://localhost:5173', 
-          'http://127.0.0.1:3000',
-          'http://127.0.0.1:5173',
-          'http://10.136.64.168:3000',
-          'http://10.136.64.168:5173',
-          /^http:\/\/localhost:\d+$/,
-          /^http:\/\/127\.0\.0\.1:\d+$/,
-          /^http:\/\/10\.136\.64\.168:\d+$/
+         "https://deployhub-frontend.onrender.com"
         ],
     methods: ['GET', 'POST'],
     credentials: true

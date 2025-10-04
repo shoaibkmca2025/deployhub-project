@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { apiPost } from './api'
+import { apiPost, testConnection } from './api'
 
 export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   const [email, setEmail] = useState('')
@@ -8,8 +8,17 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState(0)
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
 
   useEffect(() => {
+    // Check connection status
+    const checkConnection = async () => {
+      const result = await testConnection()
+      setConnectionStatus(result.success ? 'connected' : 'disconnected')
+    }
+    
+    checkConnection()
+    
     // Check if already authenticated
     const token = localStorage.getItem('token')
     if (token) {
@@ -76,11 +85,19 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
         return
       }
       
+      // Test connection first
+      const connectionTest = await testConnection()
+      if (!connectionTest.success) {
+        setError(`Cannot connect to server at ${connectionTest.serverOrigin}. Please check if the backend server is running.`)
+        return
+      }
+      
       const res = await apiPost(mode === 'signup' ? '/api/signup' : '/api/login', { email, password })
       localStorage.setItem('token', res.token)
       localStorage.setItem('user', JSON.stringify(res.user))
       onAuthed()
     } catch (e: any) {
+      console.error('Authentication error:', e)
       setError(e.message || 'Authentication failed')
     } finally {
       setLoading(false)
@@ -115,6 +132,21 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">DeployHub</h1>
             <p className="text-gray-400">Deploy applications on your own hardware</p>
+            
+            {/* Connection Status */}
+            <div className="mt-4 flex items-center justify-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-green-400' : 
+                connectionStatus === 'checking' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
+              }`}></div>
+              <span className={`text-sm ${
+                connectionStatus === 'connected' ? 'text-green-400' : 
+                connectionStatus === 'checking' ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {connectionStatus === 'connected' ? 'Connected to server' : 
+                 connectionStatus === 'checking' ? 'Checking connection...' : 'Server offline'}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-6">
