@@ -3,9 +3,15 @@
 # DeployHub Frontend Build Script for Render
 echo "🚀 Starting DeployHub Frontend Build..."
 
+# Set proper permissions
+chmod +x node_modules/.bin/vite
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 npm install
+
+# Make sure vite is executable
+chmod +x node_modules/.bin/vite
 
 # Build the application
 echo "🔨 Building application..."
