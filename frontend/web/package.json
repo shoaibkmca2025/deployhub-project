@@ -8,6 +8,8 @@
     "build": "vite build",
     "build:render": "npx vite build",
     "build:simple": "node node_modules/vite/bin/vite.js build",
+    "build:node": "node node_modules/vite/bin/vite.js build",
+    "build:fallback": "node node_modules/vite/bin/vite.js build || npx vite build || vite build",
     "preview": "vite preview --port 5173"
   },
   "dependencies": {

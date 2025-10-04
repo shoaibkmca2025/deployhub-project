@@ -19,7 +19,7 @@ services:
   # Frontend Static Site
   - type: static
     name: deployhub-frontend
-    buildCommand: cd frontend/web && npm install && npx vite build
+    buildCommand: cd frontend/web && npm install && node node_modules/vite/bin/vite.js build
     publishPath: frontend/web/dist
     envVars:
       - key: VITE_SERVER_ORIGIN
