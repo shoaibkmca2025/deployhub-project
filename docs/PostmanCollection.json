@@ -1,0 +1,16 @@
+{
+  "info": { "name": "DeployHub API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [
+    { "name": "Signup", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": "http://localhost:4000/api/signup", "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}" } } },
+    { "name": "Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": "http://localhost:4000/api/login", "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}" } } },
+    { "name": "Agents", "request": { "method": "GET", "url": "http://localhost:4000/api/agents" } },
+    { "name": "Deployments", "request": { "method": "GET", "url": "http://localhost:4000/api/deployments" } },
+    { "name": "Deploy", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}], "url": "http://localhost:4000/api/deploy", "body": { "mode": "raw", "raw": "{\n  \"agentId\": \"<agent-id>\",\n  \"repoUrl\": \"https://github.com/user/repo.git\"\n}" } } },
+    { "name": "Env Update", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}], "url": "http://localhost:4000/api/deployments/{{deploymentId}}/env", "body": { "mode": "raw", "raw": "{\n  \"env\": { \"KEY\": \"VALUE\" }\n}" } } },
+    { "name": "Action", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{token}}"}], "url": "http://localhost:4000/api/deployments/{{deploymentId}}/action", "body": { "mode": "raw", "raw": "{\n  \"action\": \"restart\"\n}" } } },
+    { "name": "Delete", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "http://localhost:4000/api/deployments/{{deploymentId}}" } },
+    { "name": "AI Suggest", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": "http://localhost:4000/api/ai/suggest", "body": { "mode": "raw", "raw": "{\n  \"repoUrl\": \"https://github.com/user/repo.git\"\n}" } } }
+  ],
+  "variable": [{ "key": "token", "value": "" }, { "key": "deploymentId", "value": "" }]
+}
+

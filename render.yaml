@@ -1,0 +1,27 @@
+services:
+  # Backend API Service
+  - type: web
+    name: deployhub-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: FRONTEND_URL
+        value: https://deployhub-frontend.onrender.com
+    rootDir: backend
+
+  # Frontend Static Site
+  - type: static
+    name: deployhub-frontend
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_SERVER_ORIGIN
+        value: https://deployhub-backend.onrender.com
+    rootDir: frontend

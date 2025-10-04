@@ -1,0 +1,14 @@
+{
+  "name": "deployhub-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5",
+    "simple-git": "^3.25.0"
+  }
+}
+

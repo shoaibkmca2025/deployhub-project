@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DeployHub API Test</title>
+</head>
+<body>
+    <h1>DeployHub API Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Test server status
+                statusDiv.textContent = 'Testing server status...';
+                const statusResponse = await fetch('http://localhost:4000/api/status');
+                const statusData = await statusResponse.json();
+                
+                statusDiv.textContent = 'Server is online!';
+                resultDiv.innerHTML = '<h3>Server Status:</h3><pre>' + JSON.stringify(statusData, null, 2) + '</pre>';
+                
+                // Test signup
+                statusDiv.textContent = 'Testing signup API...';
+                const signupResponse = await fetch('http://localhost:4000/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                if (signupResponse.ok) {
+                    const signupData = await signupResponse.json();
+                    resultDiv.innerHTML += '<h3>Signup Test:</h3><pre>' + JSON.stringify(signupData, null, 2) + '</pre>';
+                    statusDiv.textContent = 'All tests passed!';
+                } else {
+                    const errorText = await signupResponse.text();
+                    resultDiv.innerHTML += '<h3>Signup Error:</h3><pre>' + errorText + '</pre>';
+                    statusDiv.textContent = 'Signup test failed';
+                }
+                
+            } catch (error) {
+                statusDiv.textContent = 'Connection failed: ' + error.message;
+                resultDiv.innerHTML = '<h3>Error:</h3><pre>' + error.toString() + '</pre>';
+            }
+        }
+        
+        // Run test when page loads
+        testAPI();
+    </script>
+</body>
+</html>

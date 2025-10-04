@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - deployhub-network
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    restart: unless-stopped
+    networks:
+      - deployhub-network
+    volumes:
+      - ./backend/server/public:/app/server/public
+
+networks:
+  deployhub-network:
+    driver: bridge

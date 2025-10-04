@@ -1,0 +1,26 @@
+# DeployHub Backend Service for Render
+
+## Service Configuration
+
+**Service Type:** Web Service
+**Environment:** Node
+**Build Command:** `npm install`
+**Start Command:** `npm start`
+**Port:** 4000
+
+## Environment Variables
+
+```
+NODE_ENV=production
+PORT=4000
+```
+
+## Build Settings
+
+- **Root Directory:** `backend`
+- **Auto-Deploy:** Yes (from main branch)
+
+## Health Check
+
+- **Path:** `/health`
+- **Expected Response:** `{"status":"healthy"}`

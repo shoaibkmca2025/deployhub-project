@@ -1,0 +1,27 @@
+# DeployHub Frontend Service for Render
+
+## Service Configuration
+
+**Service Type:** Static Site
+**Build Command:** `cd frontend && npm install && npm run build`
+**Publish Directory:** `frontend/dist`
+
+## Environment Variables
+
+```
+VITE_SERVER_ORIGIN=https://your-backend-service.onrender.com
+```
+
+## Build Settings
+
+- **Root Directory:** `frontend`
+- **Auto-Deploy:** Yes (from main branch)
+
+## Custom Headers
+
+```
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+```

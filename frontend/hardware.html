@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Management - DeployHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .bg-slate-900 {
+            background-color: #0f172a;
+        }
+        .bg-slate-800 {
+            background-color: #1e293b;
+        }
+        .text-cyan-400 {
+            color: #06b6d4;
+        }
+        .text-amber-400 {
+            color: #f59e0b;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #06b6d4, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+        .status-online {
+            color: #10b981;
+            animation: pulse 2s infinite;
+        }
+        .status-offline {
+            color: #ef4444;
+        }
+        .device-card {
+            transition: all 0.3s ease;
+        }
+        .device-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(6, 182, 212, 0.2);
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        .agent-download-btn {
+            transition: all 0.3s ease;
+        }
+        .agent-download-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-effect">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-cyan-400 to-amber-400 rounded-lg flex items-center justify-center">
+                            <span class="text-slate-900 font-bold text-sm">DH</span>
+                        </div>
+                        <span class="text-xl font-bold gradient-text">DeployHub</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="text-gray-300 hover:text-cyan-400 transition-colors">Dashboard</a>
+                        <a href="hardware.html" class="text-cyan-400 font-medium">Hardware</a>
+                        <a href="deployments.html" class="text-gray-300 hover:text-cyan-400 transition-colors">Deployments</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-gray-400 hover:text-cyan-400 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6l-6-6v6z"></path>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <img src="resources/user-avatars/user1.jpg" alt="User" class="w-8 h-8 rounded-full">
+                        <span class="hidden md:block text-sm">Sarah Chen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+                    Hardware Management
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Connect and monitor your personal devices. Transform laptops, Raspberry Pi, and servers into your private deployment infrastructure.
+                </p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <button id="addDeviceBtn" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-cyan-700 transition-all glow-effect">
+                    Add New Device
+                </button>
+                <button id="downloadAgentBtn" class="px-8 py-3 border border-amber-400 text-amber-400 font-semibold rounded-lg hover:bg-amber-400 hover:text-slate-900 transition-all">
+                    Download Agent
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Device Overview -->
+    <section class="px-4 sm:px-6 lg:px-8 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Connected Devices -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold">Connected Devices</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="status-online">●</span>
+                            <span class="text-sm text-gray-400">2 Online</span>
+                            <span class="status-offline ml-4">●</span>
+                            <span class="text-sm text-gray-400">1 Offline</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="devicesGrid">
+                        <!-- Devices will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-8">
+                    <!-- System Overview -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">System Overview</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Total Devices</span>
+                                <span class="text-2xl font-bold text-cyan-400" id="totalDevices">3</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Online Devices</span>
+                                <span class="text-2xl font-bold text-green-400" id="onlineDevices">2</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Total CPU Cores</span>
+                                <span class="text-2xl font-bold text-amber-400" id="totalCores">24</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Total Memory</span>
+                                <span class="text-2xl font-bold text-purple-400" id="totalMemory">64 GB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resource Usage Chart -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Resource Usage</h3>
+                        <div id="resourceChart" style="height: 200px;"></div>
+                    </div>
+
+                    <!-- Agent Status -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Agent Status</h3>
+                        <div class="space-y-3" id="agentStatus">
+                            <!-- Agent status will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Device Details Modal -->
+    <div id="deviceModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-effect rounded-xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold" id="deviceModalTitle">Device Details</h2>
+                    <button id="closeDeviceModal" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Device Info -->
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Device Information</h3>
+                            <div class="space-y-3" id="deviceInfo">
+                                <!-- Device info will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Performance Metrics</h3>
+                            <div id="deviceMetrics" style="height: 200px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deployments -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Active Deployments</h3>
+                        <div class="space-y-3" id="deviceDeployments">
+                            <!-- Deployments will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Download Modal -->
+    <div id="agentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-effect rounded-xl p-8 max-w-2xl w-full">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Download Agent</h2>
+                    <button id="closeAgentModal" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <p class="text-gray-300">Install the DeployHub agent on your devices to enable remote deployment and monitoring.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button class="agent-download-btn p-6 bg-slate-800 rounded-lg border border-cyan-400/20 hover:border-cyan-400/40 text-center">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M2 12h2v8h16v-8h2v10H2V12zm20-6V2h-2v4h-2V2h-2v4h-2V2H9v4H7V2H5v4H2v2h20V6h-2z"/>
+                            </svg>
+                            <h3 class="font-semibold mb-2">Windows</h3>
+                            <p class="text-sm text-gray-400">Windows 10+</p>
+                            <p class="text-xs text-cyan-400 mt-2">agent-windows.exe</p>
+                        </button>
+                        
+                        <button class="agent-download-btn p-6 bg-slate-800 rounded-lg border border-cyan-400/20 hover:border-cyan-400/40 text-center">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                            </svg>
+                            <h3 class="font-semibold mb-2">macOS</h3>
+                            <p class="text-sm text-gray-400">macOS 10.15+</p>
+                            <p class="text-xs text-cyan-400 mt-2">agent-macos.dmg</p>
+                        </button>
+                        
+                        <button class="agent-download-btn p-6 bg-slate-800 rounded-lg border border-cyan-400/20 hover:border-cyan-400/40 text-center">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <h3 class="font-semibold mb-2">Linux</h3>
+                            <p class="text-sm text-gray-400">Ubuntu 18+</p>
+                            <p class="text-xs text-cyan-400 mt-2">agent-linux.tar.gz</p>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-slate-800 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">Installation Instructions:</h4>
+                        <div class="code-font text-sm text-gray-300 space-y-1">
+                            <p>1. Download the agent for your platform</p>
+                            <p>2. Run the installer with administrator privileges</p>
+                            <p>3. Follow the setup wizard</p>
+                            <p>4. Your device will appear in the dashboard</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-700 py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto text-center">
+            <p class="text-gray-400">© 2025 DeployHub. Empowering developers to deploy anywhere.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Hardware Management JavaScript
+        class HardwareManager {
+            constructor() {
+                this.devices = [
+                    {
+                        id: 1,
+                        name: 'MacBook Pro - Sarah\'s Laptop',
+                        type: 'laptop',
+                        status: 'online',
+                        os: 'macOS Sonoma 14.1',
+                        cpu: 'Apple M2 Pro',
+                        cores: 12,
+                        memory: 32,
+                        storage: 78,
+                        cpuUsage: 45,
+                        memoryUsage: 62,
+                        lastSeen: 'now',
+                        agentVersion: '1.2.0',
+                        deployments: ['react-ecommerce-app', 'static-website']
+                    },
+                    {
+                        id: 2,
+                        name: 'Raspberry Pi 4 - Home Server',
+                        type: 'server',
+                        status: 'online',
+                        os: 'Raspberry Pi OS 64-bit',
+                        cpu: 'ARM Cortex-A72',
+                        cores: 4,
+                        memory: 8,
+                        storage: 45,
+                        cpuUsage: 23,
+                        memoryUsage: 34,
+                        lastSeen: 'now',
+                        agentVersion: '1.2.0',
+                        deployments: ['node-api-server']
+                    },
+                    {
+                        id: 3,
+                        name: 'Ubuntu Server - Development',
+                        type: 'server',
+                        status: 'offline',
+                        os: 'Ubuntu 22.04 LTS',
+                        cpu: 'Intel Xeon E5',
+                        cores: 8,
+                        memory: 24,
+                        storage: 67,
+                        cpuUsage: 0,
+                        memoryUsage: 0,
+                        lastSeen: '2 hours ago',
+                        agentVersion: '1.1.8',
+                        deployments: []
+                    }
+                ];
+                
+                this.init();
+            }
+
+            init() {
+                this.renderDevices();
+                this.setupEventListeners();
+                this.setupCharts();
+                this.startRealTimeUpdates();
+                this.animateCounters();
+            }
+
+            renderDevices() {
+                const container = document.getElementById('devicesGrid');
+                if (!container) return;
+
+                container.innerHTML = this.devices.map(device => `
+                    <div class="device-card glass-effect rounded-xl p-6 border border-cyan-400/20 cursor-pointer" data-device-id="${device.id}">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="status-${device.status} text-xl">●</div>
+                                <div>
+                                    <h3 class="font-semibold text-lg">${device.name}</h3>
+                                    <p class="text-sm text-gray-400">${device.os}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="px-2 py-1 text-xs rounded-full ${device.status === 'online' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                                    ${device.status.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        ${device.status === 'online' ? `
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div class="text-center">
+                                    <div class="relative w-16 h-16 mx-auto mb-2">
+                                        <svg class="progress-ring w-16 h-16">
+                                            <circle cx="32" cy="32" r="28" stroke="#334155" stroke-width="4" fill="transparent"/>
+                                            <circle cx="32" cy="32" r="28" stroke="#06b6d4" stroke-width="4" fill="transparent"
+                                                stroke-dasharray="175.929" stroke-dashoffset="${175.929 - (175.929 * device.cpuUsage / 100)}"
+                                                class="progress-ring-circle"/>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-sm font-bold">${Math.round(device.cpuUsage)}%</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-400">CPU</p>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <div class="relative w-16 h-16 mx-auto mb-2">
+                                        <svg class="progress-ring w-16 h-16">
+                                            <circle cx="32" cy="32" r="28" stroke="#334155" stroke-width="4" fill="transparent"/>
+                                            <circle cx="32" cy="32" r="28" stroke="#f59e0b" stroke-width="4" fill="transparent"
+                                                stroke-dasharray="175.929" stroke-dashoffset="${175.929 - (175.929 * device.memoryUsage / 100)}"
+                                                class="progress-ring-circle"/>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-sm font-bold">${Math.round(device.memoryUsage)}%</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-400">Memory</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-400">Agent v${device.agentVersion}</span>
+                                <span class="text-gray-400">${device.deployments.length} deployments</span>
+                            </div>
+                        ` : `
+                            <div class="text-center py-8">
+                                <p class="text-gray-400 mb-4">Device offline</p>
+                                <p class="text-sm text-gray-500">Last seen: ${device.lastSeen}</p>
+                            </div>
+                        `}
+                    </div>
+                `).join('');
+
+                // Add click listeners
+                document.querySelectorAll('.device-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const deviceId = parseInt(card.dataset.deviceId);
+                        this.showDeviceDetails(deviceId);
+                    });
+                });
+
+                // Animate cards
+                anime({
+                    targets: '.device-card',
+                    translateY: [30, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 800,
+                    delay: anime.stagger(100)
+                });
+            }
+
+            showDeviceDetails(deviceId) {
+                const device = this.devices.find(d => d.id === deviceId);
+                if (!device) return;
+
+                const modal = document.getElementById('deviceModal');
+                const title = document.getElementById('deviceModalTitle');
+                const info = document.getElementById('deviceInfo');
+                const deployments = document.getElementById('deviceDeployments');
+
+                title.textContent = device.name;
+                
+                info.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Status</span>
+                            <span class="status-${device.status}">${device.status.toUpperCase()}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Operating System</span>
+                            <span>${device.os}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Processor</span>
+                            <span>${device.cpu}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">CPU Cores</span>
+                            <span>${device.cores}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Memory</span>
+                            <span>${device.memory} GB</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Storage Used</span>
+                            <span>${device.storage}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Agent Version</span>
+                            <span>v${device.agentVersion}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Last Seen</span>
+                            <span>${device.lastSeen}</span>
+                        </div>
+                    </div>
+                `;
+
+                deployments.innerHTML = device.deployments.length > 0 ? 
+                    device.deployments.map(deployment => `
+                        <div class="p-3 bg-slate-800 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">${deployment}</span>
+                                <span class="status-running text-sm">● Running</span>
+                            </div>
+                        </div>
+                    `).join('') :
+                    '<p class="text-gray-400 text-center py-4">No active deployments</p>';
+
+                modal.classList.remove('hidden');
+                
+                // Setup device metrics chart
+                this.setupDeviceMetricsChart(device);
+            }
+
+            setupDeviceMetricsChart(device) {
+                const chart = echarts.init(document.getElementById('deviceMetrics'));
+                if (!chart) return;
+
+                const option = {
+                    backgroundColor: 'transparent',
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: '#1e293b',
+                        borderColor: '#06b6d4',
+                        textStyle: { color: '#f1f5f9' }
+                    },
+                    legend: {
+                        data: ['CPU Usage', 'Memory Usage'],
+                        textStyle: { color: '#94a3b8' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        max: 100,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { lineStyle: { color: '#334155' } }
+                    },
+                    series: [
+                        {
+                            name: 'CPU Usage',
+                            type: 'line',
+                            data: this.generateMetricData(device.cpuUsage),
+                            smooth: true,
+                            lineStyle: { color: '#06b6d4' },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0, y: 0, x2: 0, y2: 1,
+                                    colorStops: [
+                                        { offset: 0, color: 'rgba(6, 182, 212, 0.3)' },
+                                        { offset: 1, color: 'rgba(6, 182, 212, 0.05)' }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            name: 'Memory Usage',
+                            type: 'line',
+                            data: this.generateMetricData(device.memoryUsage),
+                            smooth: true,
+                            lineStyle: { color: '#f59e0b' },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0, y: 0, x2: 0, y2: 1,
+                                    colorStops: [
+                                        { offset: 0, color: 'rgba(245, 158, 11, 0.3)' },
+                                        { offset: 1, color: 'rgba(245, 158, 11, 0.05)' }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+            }
+
+            generateMetricData(currentValue) {
+                const data = [];
+                for (let i = 0; i < 6; i++) {
+                    data.push(Math.max(0, Math.min(100, currentValue + (Math.random() - 0.5) * 20)));
+                }
+                return data;
+            }
+
+            setupEventListeners() {
+                // Modal controls
+                const addDeviceBtn = document.getElementById('addDeviceBtn');
+                const downloadAgentBtn = document.getElementById('downloadAgentBtn');
+                const deviceModal = document.getElementById('deviceModal');
+                const agentModal = document.getElementById('agentModal');
+                const closeDeviceModal = document.getElementById('closeDeviceModal');
+                const closeAgentModal = document.getElementById('closeAgentModal');
+
+                addDeviceBtn?.addEventListener('click', () => {
+                    agentModal?.classList.remove('hidden');
+                });
+
+                downloadAgentBtn?.addEventListener('click', () => {
+                    agentModal?.classList.remove('hidden');
+                });
+
+                closeDeviceModal?.addEventListener('click', () => {
+                    deviceModal?.classList.add('hidden');
+                });
+
+                closeAgentModal?.addEventListener('click', () => {
+                    agentModal?.classList.add('hidden');
+                });
+
+                // Agent download buttons
+                document.querySelectorAll('.agent-download-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const platform = btn.querySelector('h3').textContent;
+                        this.downloadAgent(platform);
+                    });
+                });
+            }
+
+            downloadAgent(platform) {
+                showNotification(`Downloading DeployHub agent for ${platform}...`, 'info');
+                
+                // Simulate download
+                setTimeout(() => {
+                    showNotification(`DeployHub agent for ${platform} downloaded successfully!`, 'success');
+                }, 2000);
+            }
+
+            setupCharts() {
+                const chart = echarts.init(document.getElementById('resourceChart'));
+                if (!chart) return;
+
+                const option = {
+                    backgroundColor: 'transparent',
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: '#1e293b',
+                        borderColor: '#06b6d4',
+                        textStyle: { color: '#f1f5f9' }
+                    },
+                    legend: {
+                        data: ['CPU Usage', 'Memory Usage'],
+                        textStyle: { color: '#94a3b8' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        max: 100,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { lineStyle: { color: '#334155' } }
+                    },
+                    series: [
+                        {
+                            name: 'CPU Usage',
+                            type: 'line',
+                            data: [35, 42, 28, 57, 63, 45],
+                            smooth: true,
+                            lineStyle: { color: '#06b6d4' }
+                        },
+                        {
+                            name: 'Memory Usage',
+                            type: 'line',
+                            data: [52, 48, 61, 55, 58, 62],
+                            smooth: true,
+                            lineStyle: { color: '#f59e0b' }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+            }
+
+            startRealTimeUpdates() {
+                setInterval(() => {
+                    this.devices.forEach(device => {
+                        if (device.status === 'online') {
+                            device.cpuUsage = Math.max(0, Math.min(100, device.cpuUsage + (Math.random() - 0.5) * 8));
+                            device.memoryUsage = Math.max(0, Math.min(100, device.memoryUsage + (Math.random() - 0.5) * 6));
+                        }
+                    });
+                    
+                    this.renderDevices();
+                }, 10000);
+            }
+
+            animateCounters() {
+                const counters = [
+                    { id: 'totalDevices', target: 3 },
+                    { id: 'onlineDevices', target: 2 },
+                    { id: 'totalCores', target: 24 },
+                ];
+
+                counters.forEach(counter => {
+                    const element = document.getElementById(counter.id);
+                    if (!element) return;
+
+                    anime({
+                        targets: { value: 0 },
+                        value: counter.target,
+                        duration: 2000,
+                        easing: 'easeOutExpo',
+                        update: function(anim) {
+                            element.textContent = Math.round(anim.animatables[0].target.value);
+                        }
+                    });
+                });
+            }
+        }
+
+        // Initialize hardware manager
+        document.addEventListener('DOMContentLoaded', () => {
+            new HardwareManager();
+        });
+    </script>
+</body>
+</html>

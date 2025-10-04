@@ -1,0 +1,26 @@
+{
+  "name": "deployhub-frontend",
+  "version": "1.0.0",
+  "description": "DeployHub Frontend - Self-hosted CI/CD platform dashboard",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run web:dev\" \"npm run static:serve\"",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:preview": "cd web && npm run preview",
+    "static:serve": "python -m http.server 3000",
+    "build": "npm run web:build",
+    "start": "npm run web:preview",
+    "install-all": "npm install && cd web && npm install",
+    "clean": "rm -rf web/dist web/node_modules web/package-lock.json"
+  },
+  "keywords": ["ci-cd", "deployment", "self-hosted", "frontend", "dashboard"],
+  "author": "DeployHub Team",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

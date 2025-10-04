@@ -1,0 +1,32 @@
+{
+  "name": "deployhub-project",
+  "version": "1.0.0",
+  "description": "Self-hosted CI/CD platform for deploying applications on your own hardware",
+  "main": "index.js",
+  "scripts": {
+    "dev": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "docker-compose build",
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "logs:frontend": "docker-compose logs -f frontend",
+    "logs:backend": "docker-compose logs -f backend",
+    "install-all": "cd frontend && npm run install-all && cd ../backend && npm run install-all",
+    "clean": "docker-compose down -v && docker system prune -f",
+    "clean:all": "docker-compose down -v && docker system prune -af",
+    "deploy": "docker-compose up -d --build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ci-cd", "deployment", "self-hosted", "docker", "devops"],
+  "author": "DeployHub Team",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

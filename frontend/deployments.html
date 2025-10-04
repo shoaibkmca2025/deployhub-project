@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployments - DeployHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .bg-slate-900 {
+            background-color: #0f172a;
+        }
+        .bg-slate-800 {
+            background-color: #1e293b;
+        }
+        .text-cyan-400 {
+            color: #06b6d4;
+        }
+        .text-amber-400 {
+            color: #f59e0b;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #06b6d4, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+        .status-running {
+            color: #10b981;
+            animation: pulse 2s infinite;
+        }
+        .status-building {
+            color: #f59e0b;
+            animation: spin 1s linear infinite;
+        }
+        .status-error {
+            color: #ef4444;
+        }
+        .status-stopped {
+            color: #6b7280;
+        }
+        .deployment-card {
+            transition: all 0.3s ease;
+        }
+        .deployment-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(6, 182, 212, 0.2);
+        }
+        .log-viewer {
+            background: #0a0e1a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-line {
+            padding: 2px 8px;
+            border-left: 3px solid transparent;
+        }
+        .log-line:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-left-color: #06b6d4;
+        }
+        .log-info { color: #06b6d4; }
+        .log-success { color: #10b981; }
+        .log-warning { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+        .deployment-step {
+            transition: all 0.3s ease;
+        }
+        .deployment-step.active {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: #06b6d4;
+        }
+        .deployment-step.completed {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
+        }
+        .deployment-step.failed {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-effect">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-cyan-400 to-amber-400 rounded-lg flex items-center justify-center">
+                            <span class="text-slate-900 font-bold text-sm">DH</span>
+                        </div>
+                        <span class="text-xl font-bold gradient-text">DeployHub</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="text-gray-300 hover:text-cyan-400 transition-colors">Dashboard</a>
+                        <a href="hardware.html" class="text-gray-300 hover:text-cyan-400 transition-colors">Hardware</a>
+                        <a href="deployments.html" class="text-cyan-400 font-medium">Deployments</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-gray-400 hover:text-cyan-400 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6l-6-6v6z"></path>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <img src="resources/user-avatars/user1.jpg" alt="User" class="w-8 h-8 rounded-full">
+                        <span class="hidden md:block text-sm">Sarah Chen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+                    Deployment Management
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Create, monitor, and manage your application deployments with AI-powered insights and real-time analytics.
+                </p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <button id="newDeploymentBtn" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-cyan-700 transition-all glow-effect">
+                    New Deployment
+                </button>
+                <button id="bulkActionsBtn" class="px-8 py-3 border border-amber-400 text-amber-400 font-semibold rounded-lg hover:bg-amber-400 hover:text-slate-900 transition-all">
+                    Bulk Actions
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deployment Overview -->
+    <section class="px-4 sm:px-6 lg:px-8 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Deployments List -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold">All Deployments</h2>
+                        <div class="flex items-center space-x-4">
+                            <select class="px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                <option>All Status</option>
+                                <option>Running</option>
+                                <option>Building</option>
+                                <option>Stopped</option>
+                                <option>Error</option>
+                            </select>
+                            <select class="px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                <option>All Devices</option>
+                                <option>MacBook Pro</option>
+                                <option>Raspberry Pi</option>
+                                <option>Ubuntu Server</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-4" id="deploymentsList">
+                        <!-- Deployments will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-8">
+                    <!-- Deployment Stats -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Deployment Stats</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Total Deployments</span>
+                                <span class="text-2xl font-bold text-cyan-400" id="totalDeployments">12</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Running</span>
+                                <span class="text-2xl font-bold text-green-400" id="runningDeployments">8</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Building</span>
+                                <span class="text-2xl font-bold text-amber-400" id="buildingDeployments">2</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400">Failed</span>
+                                <span class="text-2xl font-bold text-red-400" id="failedDeployments">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Performance Overview</h3>
+                        <div id="performanceChart" style="height: 200px;"></div>
+                    </div>
+
+                    <!-- AI Insights -->
+                    <div class="glass-effect rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">AI Insights</h3>
+                        <div class="space-y-3" id="aiInsights">
+                            <!-- AI insights will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Deployment Modal -->
+    <div id="deploymentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-effect rounded-xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">New Deployment</h2>
+                    <button id="closeDeploymentModal" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Deployment Wizard -->
+                <div class="space-y-8">
+                    <!-- Step 1: Repository -->
+                    <div class="deployment-step active p-6 rounded-lg border border-cyan-400/20">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 bg-cyan-500 text-white rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                            Connect Repository
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">GitHub Repository URL</label>
+                                <input type="text" id="repoUrl" placeholder="https://github.com/username/repository" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Branch</label>
+                                <input type="text" id="branch" placeholder="main" value="main" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                            </div>
+                            <button id="analyzeRepoBtn" class="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
+                                Analyze Repository
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Configuration -->
+                    <div class="deployment-step p-6 rounded-lg border border-slate-600">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 bg-slate-600 text-white rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                            Configure Build
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Project Type</label>
+                                <select id="projectType" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                    <option>Auto-detect</option>
+                                    <option>Node.js</option>
+                                    <option>Python</option>
+                                    <option>React</option>
+                                    <option>Vue.js</option>
+                                    <option>Static Site</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Build Command</label>
+                                <input type="text" id="buildCommand" placeholder="npm run build" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                <p class="text-sm text-gray-400 mt-1" id="buildSuggestion">AI will suggest build commands after repository analysis</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Start Command</label>
+                                <input type="text" id="startCommand" placeholder="npm start" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Target Device -->
+                    <div class="deployment-step p-6 rounded-lg border border-slate-600">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 bg-slate-600 text-white rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                            Select Target Device
+                        </h3>
+                        <div class="space-y-3" id="deviceSelection">
+                            <!-- Devices will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Environment Variables -->
+                    <div class="deployment-step p-6 rounded-lg border border-slate-600">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 bg-slate-600 text-white rounded-full flex items-center justify-center text-sm mr-3">4</span>
+                            Environment Variables
+                        </h3>
+                        <div class="space-y-3" id="envVars">
+                            <div class="flex space-x-2">
+                                <input type="text" placeholder="NODE_ENV" class="flex-1 px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                <input type="text" placeholder="production" class="flex-1 px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                                <button class="px-3 py-2 text-red-400 hover:text-red-300 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button id="addEnvVarBtn" class="mt-3 px-4 py-2 border border-cyan-400 text-cyan-400 rounded-lg hover:bg-cyan-400 hover:text-slate-900 transition-colors">
+                            Add Variable
+                        </button>
+                    </div>
+
+                    <!-- Deployment Actions -->
+                    <div class="flex justify-end space-x-4 pt-6 border-t border-slate-600">
+                        <button id="cancelDeploymentBtn" class="px-6 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                        <button id="createDeploymentBtn" class="px-6 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-600 hover:to-cyan-700 transition-all">
+                            Create Deployment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Build Logs Modal -->
+    <div id="logsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-effect rounded-xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">Build Logs</h2>
+                    <button id="closeLogsModal" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="log-viewer rounded-lg p-4 mb-4" id="logViewer">
+                    <!-- Logs will be populated by JavaScript -->
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="autoScrollToggle" class="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors">
+                            Auto-scroll: ON
+                        </button>
+                        <button id="clearLogsBtn" class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                            Clear Logs
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-400">Build Status:</span>
+                        <span id="buildStatus" class="status-building text-sm">Building</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-700 py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto text-center">
+            <p class="text-gray-400">© 2025 DeployHub. Empowering developers to deploy anywhere.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Deployments Management JavaScript
+        class DeploymentManager {
+            constructor() {
+                this.deployments = [
+                    {
+                        id: 1,
+                        name: 'react-ecommerce-app',
+                        status: 'running',
+                        device: 'MacBook Pro - Sarah\'s Laptop',
+                        branch: 'main',
+                        lastDeploy: '2 minutes ago',
+                        buildTime: '3m 24s',
+                        commits: 12,
+                        health: 98,
+                        type: 'React',
+                        buildCommand: 'npm run build',
+                        startCommand: 'npm start',
+                        port: 3000
+                    },
+                    {
+                        id: 2,
+                        name: 'node-api-server',
+                        status: 'building',
+                        device: 'Raspberry Pi 4 - Home Server',
+                        branch: 'develop',
+                        lastDeploy: '5 minutes ago',
+                        buildTime: '1m 45s',
+                        commits: 8,
+                        health: 95,
+                        type: 'Node.js',
+                        buildCommand: 'npm install',
+                        startCommand: 'npm start',
+                        port: 8080
+                    },
+                    {
+                        id: 3,
+                        name: 'python-ml-service',
+                        status: 'running',
+                        device: 'Ubuntu Server - Development',
+                        branch: 'main',
+                        lastDeploy: '1 hour ago',
+                        buildTime: '5m 12s',
+                        commits: 5,
+                        health: 92,
+                        type: 'Python',
+                        buildCommand: 'pip install -r requirements.txt',
+                        startCommand: 'python app.py',
+                        port: 5000
+                    },
+                    {
+                        id: 4,
+                        name: 'static-website',
+                        status: 'stopped',
+                        device: 'MacBook Pro - Sarah\'s Laptop',
+                        branch: 'main',
+                        lastDeploy: '3 hours ago',
+                        buildTime: '45s',
+                        commits: 3,
+                        health: 100,
+                        type: 'Static',
+                        buildCommand: 'npm run build',
+                        startCommand: 'serve -s build',
+                        port: 3001
+                    }
+                ];
+
+                this.devices = [
+                    { id: 1, name: 'MacBook Pro - Sarah\'s Laptop', status: 'online' },
+                    { id: 2, name: 'Raspberry Pi 4 - Home Server', status: 'online' },
+                    { id: 3, name: 'Ubuntu Server - Development', status: 'offline' }
+                ];
+
+                this.aiInsights = [
+                    "Your Node.js deployment can be optimized by using PM2 for process management.",
+                    "Consider implementing health checks for better monitoring of your services.",
+                    "The React app build time can be reduced by 40% with proper caching strategies.",
+                    "Your Python ML service might benefit from GPU acceleration on compatible hardware."
+                ];
+
+                this.init();
+            }
+
+            init() {
+                this.renderDeployments();
+                this.renderDeviceSelection();
+                this.renderAIInsights();
+                this.setupEventListeners();
+                this.setupCharts();
+                this.startRealTimeUpdates();
+                this.animateCounters();
+            }
+
+            renderDeployments() {
+                const container = document.getElementById('deploymentsList');
+                if (!container) return;
+
+                container.innerHTML = this.deployments.map(deployment => `
+                    <div class="deployment-card glass-effect rounded-xl p-6 border border-cyan-400/20">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="status-${deployment.status} text-xl">●</div>
+                                <div>
+                                    <h3 class="font-semibold text-lg">${deployment.name}</h3>
+                                    <p class="text-sm text-gray-400">${deployment.type} • ${deployment.branch} branch</p>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded-full ${this.getStatusBadgeClass(deployment.status)}">
+                                    ${deployment.status.charAt(0).toUpperCase() + deployment.status.slice(1)}
+                                </span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="View Logs" onclick="deploymentManager.viewLogs(${deployment.id})">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-2 text-gray-400 hover:text-amber-400 transition-colors" title="Restart" onclick="deploymentManager.restartDeployment(${deployment.id})">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-2 text-gray-400 hover:text-red-400 transition-colors" title="Stop" onclick="deploymentManager.stopDeployment(${deployment.id})">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-2 text-gray-400 hover:text-purple-400 transition-colors" title="Settings" onclick="deploymentManager.editDeployment(${deployment.id})">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                            <div>
+                                <span class="text-gray-400">Device</span>
+                                <p class="font-medium">${deployment.device}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Last Deploy</span>
+                                <p class="font-medium">${deployment.lastDeploy}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Build Time</span>
+                                <p class="font-medium">${deployment.buildTime}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Health</span>
+                                <p class="font-medium text-green-400">${deployment.health}%</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1 bg-slate-700 rounded-full h-2 w-32">
+                                    <div class="bg-gradient-to-r from-cyan-400 to-amber-400 h-2 rounded-full" style="width: ${deployment.health}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-400">${deployment.commits} commits</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-xs text-gray-400">
+                                <span>Port: ${deployment.port}</span>
+                                <span>•</span>
+                                <span>${deployment.type}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Animate deployment cards
+                anime({
+                    targets: '.deployment-card',
+                    translateY: [30, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 800,
+                    delay: anime.stagger(100)
+                });
+            }
+
+            renderDeviceSelection() {
+                const container = document.getElementById('deviceSelection');
+                if (!container) return;
+
+                container.innerHTML = this.devices.map(device => `
+                    <label class="flex items-center space-x-3 p-4 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:border-cyan-400 transition-colors">
+                        <input type="radio" name="device" value="${device.id}" class="text-cyan-400 focus:ring-cyan-400" ${device.status === 'online' ? '' : 'disabled'}>
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-medium">${device.name}</span>
+                                <span class="status-${device.status === 'online' ? 'online' : 'offline'} text-sm">●</span>
+                            </div>
+                            <p class="text-sm text-gray-400">${device.status === 'online' ? 'Online and ready' : 'Offline'}</p>
+                        </div>
+                    </label>
+                `).join('');
+            }
+
+            renderAIInsights() {
+                const container = document.getElementById('aiInsights');
+                if (!container) return;
+
+                container.innerHTML = this.aiInsights.map(insight => `
+                    <div class="p-3 bg-slate-800 rounded-lg border border-amber-400/20">
+                        <div class="flex items-start space-x-2">
+                            <div class="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0"></div>
+                            <p class="text-sm text-gray-300">${insight}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            getStatusBadgeClass(status) {
+                const classes = {
+                    running: 'bg-green-500/20 text-green-400',
+                    building: 'bg-amber-500/20 text-amber-400',
+                    stopped: 'bg-gray-500/20 text-gray-400',
+                    error: 'bg-red-500/20 text-red-400'
+                };
+                return classes[status] || classes.stopped;
+            }
+
+            setupEventListeners() {
+                // Modal controls
+                const newDeploymentBtn = document.getElementById('newDeploymentBtn');
+                const deploymentModal = document.getElementById('deploymentModal');
+                const closeDeploymentModal = document.getElementById('closeDeploymentModal');
+                const cancelDeploymentBtn = document.getElementById('cancelDeploymentBtn');
+                const createDeploymentBtn = document.getElementById('createDeploymentBtn');
+                const analyzeRepoBtn = document.getElementById('analyzeRepoBtn');
+                const addEnvVarBtn = document.getElementById('addEnvVarBtn');
+
+                newDeploymentBtn?.addEventListener('click', () => {
+                    deploymentModal?.classList.remove('hidden');
+                });
+
+                closeDeploymentModal?.addEventListener('click', () => {
+                    deploymentModal?.classList.add('hidden');
+                });
+
+                cancelDeploymentBtn?.addEventListener('click', () => {
+                    deploymentModal?.classList.add('hidden');
+                });
+
+                createDeploymentBtn?.addEventListener('click', () => {
+                    this.createDeployment();
+                });
+
+                analyzeRepoBtn?.addEventListener('click', () => {
+                    this.analyzeRepository();
+                });
+
+                addEnvVarBtn?.addEventListener('click', () => {
+                    this.addEnvironmentVariable();
+                });
+
+                // Logs modal
+                const logsModal = document.getElementById('logsModal');
+                const closeLogsModal = document.getElementById('closeLogsModal');
+                const autoScrollToggle = document.getElementById('autoScrollToggle');
+                const clearLogsBtn = document.getElementById('clearLogsBtn');
+
+                closeLogsModal?.addEventListener('click', () => {
+                    logsModal?.classList.add('hidden');
+                });
+
+                autoScrollToggle?.addEventListener('click', () => {
+                    this.toggleAutoScroll();
+                });
+
+                clearLogsBtn?.addEventListener('click', () => {
+                    this.clearLogs();
+                });
+            }
+
+            analyzeRepository() {
+                const repoUrl = document.getElementById('repoUrl').value;
+                if (!repoUrl) {
+                    showNotification('Please enter a repository URL', 'error');
+                    return;
+                }
+
+                showNotification('Analyzing repository...', 'info');
+
+                // Simulate analysis
+                setTimeout(() => {
+                    // Update project type
+                    const projectType = document.getElementById('projectType');
+                    const buildCommand = document.getElementById('buildCommand');
+                    const startCommand = document.getElementById('startCommand');
+                    const buildSuggestion = document.getElementById('buildSuggestion');
+
+                    if (repoUrl.includes('react') || repoUrl.includes('next')) {
+                        projectType.value = 'React';
+                        buildCommand.value = 'npm run build';
+                        startCommand.value = 'npm start';
+                        buildSuggestion.textContent = 'AI detected React app. Suggested build command: npm run build';
+                    } else if (repoUrl.includes('node') || repoUrl.includes('express')) {
+                        projectType.value = 'Node.js';
+                        buildCommand.value = 'npm install';
+                        startCommand.value = 'npm start';
+                        buildSuggestion.textContent = 'AI detected Node.js app. Suggested build command: npm install';
+                    } else if (repoUrl.includes('python') || repoUrl.includes('flask') || repoUrl.includes('django')) {
+                        projectType.value = 'Python';
+                        buildCommand.value = 'pip install -r requirements.txt';
+                        startCommand.value = 'python app.py';
+                        buildSuggestion.textContent = 'AI detected Python app. Suggested build command: pip install -r requirements.txt';
+                    }
+
+                    // Activate next step
+                    document.querySelectorAll('.deployment-step')[0].classList.remove('active');
+                    document.querySelectorAll('.deployment-step')[0].classList.add('completed');
+                    document.querySelectorAll('.deployment-step')[1].classList.add('active');
+                    
+                    showNotification('Repository analyzed successfully!', 'success');
+                }, 2000);
+            }
+
+            addEnvironmentVariable() {
+                const container = document.getElementById('envVars');
+                const newVar = document.createElement('div');
+                newVar.className = 'flex space-x-2';
+                newVar.innerHTML = `
+                    <input type="text" placeholder="VARIABLE_NAME" class="flex-1 px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                    <input type="text" placeholder="value" class="flex-1 px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg focus:border-cyan-400 focus:outline-none">
+                    <button class="px-3 py-2 text-red-400 hover:text-red-300 transition-colors" onclick="this.parentElement.remove()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(newVar);
+            }
+
+            createDeployment() {
+                const repoUrl = document.getElementById('repoUrl').value;
+                const branch = document.getElementById('branch').value;
+                const projectType = document.getElementById('projectType').value;
+                const buildCommand = document.getElementById('buildCommand').value;
+                const startCommand = document.getElementById('startCommand').value;
+                const selectedDevice = document.querySelector('input[name="device"]:checked');
+
+                if (!repoUrl || !buildCommand || !selectedDevice) {
+                    showNotification('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                const newDeployment = {
+                    id: this.deployments.length + 1,
+                    name: repoUrl.split('/').pop().replace('.git', '') || 'new-deployment',
+                    status: 'building',
+                    device: this.devices.find(d => d.id == selectedDevice.value)?.name || 'Unknown Device',
+                    branch: branch,
+                    lastDeploy: 'just now',
+                    buildTime: '0m 00s',
+                    commits: 0,
+                    health: 0,
+                    type: projectType,
+                    buildCommand: buildCommand,
+                    startCommand: startCommand,
+                    port: Math.floor(Math.random() * 1000) + 3000
+                };
+
+                this.deployments.unshift(newDeployment);
+                this.renderDeployments();
+                
+                // Close modal
+                document.getElementById('deploymentModal')?.classList.add('hidden');
+                
+                // Simulate build
+                this.simulateBuild(newDeployment);
+                
+                showNotification('Deployment created successfully!', 'success');
+            }
+
+            simulateBuild(deployment) {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    deployment.health = Math.min(progress, 100);
+                    deployment.buildTime = `${Math.floor(progress / 20)}m ${Math.floor(Math.random() * 60)}s`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        deployment.status = 'running';
+                        deployment.health = 98;
+                        deployment.buildTime = '3m 24s';
+                        deployment.commits = 1;
+                    }
+                    
+                    this.renderDeployments();
+                }, 1000);
+            }
+
+            viewLogs(deploymentId) {
+                const deployment = this.deployments.find(d => d.id === deploymentId);
+                if (!deployment) return;
+
+                const logsModal = document.getElementById('logsModal');
+                const logViewer = document.getElementById('logViewer');
+                const buildStatus = document.getElementById('buildStatus');
+
+                buildStatus.className = `status-${deployment.status} text-sm`;
+                buildStatus.textContent = deployment.status.charAt(0).toUpperCase() + deployment.status.slice(1);
+
+                // Generate sample logs
+                const logs = this.generateBuildLogs(deployment);
+                logViewer.innerHTML = logs.map(log => 
+                    `<div class="log-line log-${log.type}">${log.timestamp} - ${log.message}</div>`
+                ).join('');
+
+                logsModal.classList.remove('hidden');
+
+                // Auto-scroll to bottom
+                setTimeout(() => {
+                    logViewer.scrollTop = logViewer.scrollHeight;
+                }, 100);
+            }
+
+            generateBuildLogs(deployment) {
+                const logs = [];
+                const now = new Date();
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'info',
+                    message: `Starting deployment of ${deployment.name}...`
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'info',
+                    message: `Cloning repository from ${deployment.branch} branch...`
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'success',
+                    message: 'Repository cloned successfully'
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'info',
+                    message: `Running build command: ${deployment.buildCommand}`
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'success',
+                    message: 'Build completed successfully'
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'info',
+                    message: `Starting application on port ${deployment.port}...`
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'success',
+                    message: 'Application started successfully'
+                });
+                
+                logs.push({
+                    timestamp: now.toLocaleTimeString(),
+                    type: 'info',
+                    message: 'Deployment completed!'
+                });
+
+                return logs;
+            }
+
+            restartDeployment(deploymentId) {
+                const deployment = this.deployments.find(d => d.id === deploymentId);
+                if (!deployment) return;
+
+                deployment.status = 'building';
+                deployment.health = 0;
+                this.renderDeployments();
+                
+                // Simulate restart
+                setTimeout(() => {
+                    deployment.status = 'running';
+                    deployment.health = 98;
+                    this.renderDeployments();
+                    showNotification(`${deployment.name} restarted successfully!`, 'success');
+                }, 3000);
+                
+                showNotification(`Restarting ${deployment.name}...`, 'info');
+            }
+
+            stopDeployment(deploymentId) {
+                const deployment = this.deployments.find(d => d.id === deploymentId);
+                if (!deployment) return;
+
+                deployment.status = 'stopped';
+                this.renderDeployments();
+                showNotification(`${deployment.name} stopped`, 'info');
+            }
+
+            editDeployment(deploymentId) {
+                showNotification('Edit functionality coming soon!', 'info');
+            }
+
+            setupCharts() {
+                const chart = echarts.init(document.getElementById('performanceChart'));
+                if (!chart) return;
+
+                const option = {
+                    backgroundColor: 'transparent',
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: '#1e293b',
+                        borderColor: '#06b6d4',
+                        textStyle: { color: '#f1f5f9' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { lineStyle: { color: '#334155' } }
+                    },
+                    series: [{
+                        name: 'Deployments',
+                        type: 'bar',
+                        data: [8, 12, 15, 10, 18, 14],
+                        itemStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: '#06b6d4' },
+                                    { offset: 1, color: '#0891b2' }
+                                ]
+                            }
+                        }
+                    }]
+                };
+                
+                chart.setOption(option);
+            }
+
+            startRealTimeUpdates() {
+                setInterval(() => {
+                    this.deployments.forEach(deployment => {
+                        if (deployment.status === 'running') {
+                            deployment.health = Math.max(90, Math.min(100, deployment.health + (Math.random() - 0.5) * 2));
+                        }
+                    });
+                    
+                    this.renderDeployments();
+                }, 5000);
+            }
+
+            animateCounters() {
+                const counters = [
+                    { id: 'totalDeployments', target: 12 },
+                    { id: 'runningDeployments', target: 8 },
+                    { id: 'buildingDeployments', target: 2 },
+                    { id: 'failedDeployments', target: 1 }
+                ];
+
+                counters.forEach(counter => {
+                    const element = document.getElementById(counter.id);
+                    if (!element) return;
+
+                    anime({
+                        targets: { value: 0 },
+                        value: counter.target,
+                        duration: 2000,
+                        easing: 'easeOutExpo',
+                        update: function(anim) {
+                            element.textContent = Math.round(anim.animatables[0].target.value);
+                        }
+                    });
+                });
+            }
+
+            toggleAutoScroll() {
+                const toggle = document.getElementById('autoScrollToggle');
+                if (toggle.textContent.includes('ON')) {
+                    toggle.textContent = 'Auto-scroll: OFF';
+                    toggle.classList.remove('bg-cyan-500/20', 'text-cyan-400');
+                    toggle.classList.add('bg-gray-500/20', 'text-gray-400');
+                } else {
+                    toggle.textContent = 'Auto-scroll: ON';
+                    toggle.classList.remove('bg-gray-500/20', 'text-gray-400');
+                    toggle.classList.add('bg-cyan-500/20', 'text-cyan-400');
+                }
+            }
+
+            clearLogs() {
+                const logViewer = document.getElementById('logViewer');
+                logViewer.innerHTML = '<div class="log-line log-info">Logs cleared...</div>';
+            }
+        }
+
+        // Initialize deployment manager
+        let deploymentManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            deploymentManager = new DeploymentManager();
+        });
+    </script>
+</body>
+</html>

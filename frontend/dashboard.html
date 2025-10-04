@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DeployHub Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    .row { display: flex; gap: 24px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; flex: 1; }
+    pre { background: #111; color: #0f0; padding: 12px; height: 220px; overflow: auto; }
+    input, button { padding: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+    .badge { padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+    .online { background: #e6ffed; color: #0a0; }
+    .offline { background: #ffecec; color: #a00; }
+  </style>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const SERVER = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:4000' : `${location.protocol}//${location.hostname}:4000`;
+    const ioClient = io(SERVER, { transports: ['websocket'], query: { kind: 'dashboard' } });
+    let agents = [];
+    let selectedDeployment = null;
+
+    function renderAgents() {
+      const tbody = document.querySelector('#agents tbody');
+      tbody.innerHTML = '';
+      agents.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${a.name}</td>
+                        <td><span class=\"badge ${a.status}\">${a.status}</span></td>
+                        <td>${a.specs?.cpuCount || 0} CPU, ${a.specs?.memory?.totalMb || 0}MB</td>
+                        <td><button onclick=\"deployRepo('${a.id}')\">Deploy</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function appendLog(line) {
+      const pre = document.getElementById('log');
+      pre.textContent += `\n${line}`;
+      pre.scrollTop = pre.scrollHeight;
+    }
+
+    async function deployRepo(agentId) {
+      const url = document.getElementById('repoUrl').value.trim();
+      if (!url) { alert('Enter GitHub repo URL'); return; }
+      const res = await fetch(`${SERVER}/api/deploy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId, repoUrl: url })});
+      const data = await res.json();
+      selectedDeployment = data.deployment.id;
+      appendLog(`[dashboard] Deployment ${selectedDeployment} started...`);
+    }
+
+    ioClient.on('dashboard:agents', (list) => { agents = list; renderAgents(); });
+    ioClient.on('dashboard:deployment-log', ({ deploymentId, line }) => { if (selectedDeployment === deploymentId) appendLog(line); });
+    ioClient.on('dashboard:deployment-status', ({ deploymentId, status }) => { if (selectedDeployment === deploymentId) appendLog(`[dashboard] Status: ${status}`); });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAgents();
+    });
+  </script>
+</head>
+<body>
+  <h1>DeployHub</h1>
+  <div class="row">
+    <div class="card">
+      <h3>Agents</h3>
+      <table id="agents">
+        <thead><tr><th>Name</th><th>Status</th><th>Specs</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card" style="max-width: 420px;">
+      <h3>New Deployment</h3>
+      <input id="repoUrl" placeholder="https://github.com/user/repo.git" style="width:100%;" />
+      <p style="font-size: 12px; color: #666;">For MVP, agent simulates build and success.</p>
+      <h3>Logs</h3>
+      <pre id="log"></pre>
+    </div>
+  </div>
+</body>
+</html>
+
+
