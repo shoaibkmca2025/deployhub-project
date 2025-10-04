@@ -50,9 +50,15 @@ echo    git push -u origin main
 echo.
 echo 2. Deploy on Render:
 echo    - Go to https://render.com
-echo    - Create new Web Service for backend
-echo    - Create new Static Site for frontend
-echo    - Use the configuration from RENDER_DEPLOYMENT_GUIDE.md
+echo    - Create new Web Service for backend:
+echo      * Root Directory: . (project root)
+echo      * Build Command: cd backend ^&^& npm install
+echo      * Start Command: cd backend ^&^& npm start
+echo    - Create new Static Site for frontend:
+echo      * Root Directory: . (project root)
+echo      * Build Command: cd frontend ^&^& npm install ^&^& npm run build
+echo      * Publish Directory: frontend/dist
+echo    - See RENDER_DEPLOYMENT_FIXED.md for complete details
 echo.
 echo 3. Update environment variables with your actual Render URLs
 echo.
