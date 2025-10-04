@@ -56,7 +56,7 @@ echo      * Build Command: cd backend ^&^& npm install
 echo      * Start Command: cd backend ^&^& npm start
 echo    - Create new Static Site for frontend:
 echo      * Root Directory: . (project root)
-echo      * Build Command: cd frontend ^&^& npm install ^&^& npm run build
+echo      * Build Command: cd frontend ^&^& npm install ^&^& npx vite build
 echo      * Publish Directory: frontend/dist
 echo    - See RENDER_DEPLOYMENT_FIXED.md for complete details
 echo.
