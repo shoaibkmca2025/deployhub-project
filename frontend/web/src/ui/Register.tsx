@@ -13,7 +13,7 @@ export default function Register() {
       setError('')
       const res = await apiPost('/api/signup', { email, password })
       localStorage.setItem('token', res.token)
-      navigate('/')
+      navigate('/dashboard')
     } catch (e: any) {
       setError(e.message || 'registration failed')
     }

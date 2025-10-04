@@ -2,6 +2,8 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
+import LandingPage from './ui/LandingPage'
+import AboutPage from './ui/AboutPage'
 import App from './ui/App'
 import Register from './ui/Register'
 import FancyDashboard from './ui/FancyDashboard'
@@ -10,7 +12,10 @@ import Deployments from './ui/Deployments'
 import DeployPage from './ui/DeployPage'
 
 const router = createBrowserRouter([
-  { path: '/', element: <App /> },
+  { path: '/', element: <LandingPage /> },
+  { path: '/about', element: <AboutPage /> },
+  { path: '/signup', element: <Register /> },
+  { path: '/dashboard', element: <App /> },
   { path: '/register', element: <Register /> },
   { path: '/fancy', element: <FancyDashboard /> },
   { path: '/hardware', element: <Hardware /> },

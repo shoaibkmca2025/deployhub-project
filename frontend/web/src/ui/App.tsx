@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import Auth from './Auth'
 import { apiDelete, apiGet, apiPost, apiPut, serverOrigin } from './api'
@@ -12,6 +13,7 @@ type Agent = {
 }
 
 export default function App() {
+  const navigate = useNavigate()
   const [agents, setAgents] = useState<Agent[]>([])
   const [repoUrl, setRepoUrl] = useState('')
   const [selectedDeployment, setSelectedDeployment] = useState<string | null>(null)
