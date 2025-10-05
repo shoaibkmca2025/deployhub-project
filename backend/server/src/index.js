@@ -125,22 +125,16 @@ const addDemoAgents = () => {
 // Add demo agents on startup
 addDemoAgents();
 
-// Ensure demo agents are always available - add them every 5 seconds if missing
+// Ensure demo agents are always available - add them every 2 seconds if missing
 // This is critical for Render deployments where agents might not persist
 setInterval(() => {
-  // In production (Render), always add demo agents to ensure they're available
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production environment: ensuring demo agents are available...');
-    addDemoAgents();
-  } else {
-    // In development, only add if missing
-    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
-    if (!hasDemoAgents) {
-      console.log('Demo agents missing, re-adding...');
-      addDemoAgents();
-    }
-  }
-}, 5000);
+  // Always add demo agents to ensure they're available, regardless of environment
+  console.log('Ensuring demo agents are available...');
+  addDemoAgents();
+  
+  // Force update all connected dashboard clients with the latest agent data
+  io.to('dashboard').emit('dashboard:agents', getAgentsPublic());
+}, 2000);
 
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
@@ -565,8 +559,19 @@ io.on('connection', (socket) => {
   // For dashboard clients, ensure demo agents are available
   if (kind === 'dashboard') {
     console.log('Dashboard client connected, ensuring demo agents are available...');
+    socket.join('dashboard');
+    
+    // Always add demo agents when dashboard connects
     addDemoAgents();
+    
+    // Force update with latest agent data
     socket.emit('dashboard:agents', getAgentsPublic());
+    
+    // Send another update after a short delay to ensure data arrives
+    setTimeout(() => {
+      addDemoAgents();
+      socket.emit('dashboard:agents', getAgentsPublic());
+    }, 1000);
   }
   
   if (kind === 'agent') {
