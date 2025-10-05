@@ -3,6 +3,10 @@ const serverOrigin = (import.meta as any).env?.VITE_SERVER_ORIGIN || (() => {
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     return 'http://localhost:4000'
   }
+  // If accessing via render.com, use the deployed backend
+  if (location.hostname.includes('render.com')) {
+    return 'https://deployhub-backend.onrender.com'
+  }
   // If accessing via network IP, use the same IP for server
   return `${location.protocol}//${location.hostname}:4000`
 })()

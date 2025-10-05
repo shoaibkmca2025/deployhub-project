@@ -1,17 +1,53 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { serverOrigin } from './api'
+import { serverOrigin, apiGet } from './api'
 
 type Agent = { id: string; name: string; status: 'online'|'offline'; specs?: any }
 
 export default function Hardware() {
   const [agents, setAgents] = useState<Agent[]>([])
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
   const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
+    console.log('Hardware: Connecting to server:', serverOrigin)
+    
+    // Fallback: Try to get agents via REST API first
+    const fetchAgents = async () => {
+      try {
+        const response = await apiGet('/api/agents')
+        console.log('Hardware: Fetched agents via API:', response.agents)
+        setAgents(response.agents || [])
+      } catch (error) {
+        console.error('Hardware: Failed to fetch agents via API:', error)
+      }
+    }
+    
+    fetchAgents()
+    
     const socket = io(serverOrigin, { transports: ['websocket'], query: { kind: 'dashboard' } })
     socketRef.current = socket
-    socket.on('dashboard:agents', (list: Agent[]) => setAgents(list))
+    
+    socket.on('connect', () => {
+      console.log('Hardware: Socket connected')
+      setConnectionStatus('connected')
+    })
+    
+    socket.on('disconnect', () => {
+      console.log('Hardware: Socket disconnected')
+      setConnectionStatus('disconnected')
+    })
+    
+    socket.on('dashboard:agents', (list: Agent[]) => {
+      console.log('Hardware: Received agents via socket:', list)
+      setAgents(list)
+    })
+    
+    socket.on('connect_error', (error) => {
+      console.error('Hardware: Connection error:', error)
+      setConnectionStatus('disconnected')
+    })
+    
     return () => { socket.disconnect() }
   }, [])
 
@@ -28,7 +64,22 @@ export default function Hardware() {
               </div>
               <span className="text-xl font-bold">DeployHub</span>
             </div>
-            <div className="text-sm text-gray-400">Server: {serverOrigin}</div>
+            <div className="flex items-center space-x-4 text-sm text-gray-400">
+              <div>Server: {serverOrigin}</div>
+              <div className={`flex items-center space-x-1 ${
+                connectionStatus === 'connected' ? 'text-green-400' : 
+                connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-400' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
+                }`}></div>
+                <span>
+                  {connectionStatus === 'connected' ? 'Connected' : 
+                   connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
