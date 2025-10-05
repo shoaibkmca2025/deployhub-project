@@ -55,9 +55,6 @@ const io = new SocketIOServer(server, {
   transports: ['websocket', 'polling']
 });
 
-// Always ensure demo agents exist at startup
-addDemoAgents();
-
 // Enhanced in-memory state with persistence
 const agents = new Map(); // agentId -> { id, name, status, lastSeen, specs, socketId, createdAt }
 const deployments = new Map(); // deploymentId -> { id, agentId, repoUrl, status, logs: [], name, env: {}, createdAt, updatedAt }
@@ -66,7 +63,7 @@ const tokens = new Map(); // token -> { userId, createdAt, expiresAt }
 const deploymentLinks = new Map(); // linkId -> { repoUrl, branch, buildCommand, startCommand, env, timestamp }
 
 // Add demo agents for testing
-const addDemoAgents = () => {
+function addDemoAgents() {
   // Clear any existing agents first to ensure clean state
   agents.clear();
   
@@ -129,7 +126,7 @@ const addDemoAgents = () => {
   return demoAgents;
 };
 
-// Add demo agents on startup
+// Always ensure demo agents exist at startup
 addDemoAgents();
 
 // Ensure demo agents are always available - add them every 1 second
@@ -674,7 +671,7 @@ process.on('SIGINT', () => {
   });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {

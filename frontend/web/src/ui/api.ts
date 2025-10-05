@@ -1,14 +1,14 @@
 const serverOrigin = (import.meta as any).env?.VITE_SERVER_ORIGIN || (() => {
   // If accessing via localhost, use localhost for server
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    return 'http://localhost:4000'
+    return 'http://localhost:4001'
   }
   // If accessing via render.com or any production deployment, use the deployed backend
   if (location.hostname.includes('render.com') || location.hostname.includes('onrender.com')) {
     return 'https://deployhub-backend.onrender.com'
   }
   // If accessing via network IP, use the same IP for server
-  return `${location.protocol}//${location.hostname}:4000`
+  return `${location.protocol}//${location.hostname}:4001`
 })()
 
 function authHeaders() {
