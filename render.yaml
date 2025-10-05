@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     buildCommand: cd backend && npm run install-all
-    startCommand: cd backend && node server/src/index.js & node agent/index.js
+    startCommand: cd backend && node server/src/index.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
