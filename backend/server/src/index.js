@@ -125,6 +125,15 @@ const addDemoAgents = () => {
 // Add demo agents on startup
 addDemoAgents();
 
+// Ensure demo agents are always available - add them every 30 seconds if missing
+setInterval(() => {
+  const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+  if (!hasDemoAgents) {
+    console.log('Demo agents missing, re-adding...');
+    addDemoAgents();
+  }
+}, 30000);
+
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
   const now = Date.now();
@@ -279,6 +288,13 @@ function requireAuth(req, res, next) {
 }
 
 app.get('/api/agents', (req, res) => {
+  // Ensure demo agents are always present
+  const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+  if (!hasDemoAgents) {
+    console.log('No demo agents found, adding them...');
+    addDemoAgents();
+  }
+  
   res.json({ agents: getAgentsPublic() });
 });
 
@@ -301,10 +317,18 @@ app.post('/api/demo-agents', (req, res) => {
 
 // Public health check for agents
 app.get('/api/status', (req, res) => {
+  // Ensure demo agents are present
+  const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+  if (!hasDemoAgents) {
+    console.log('No demo agents found in status check, adding them...');
+    addDemoAgents();
+  }
+  
   res.json({ 
     status: 'online',
     agents: agents.size,
     deployments: deployments.size,
+    demoAgents: Array.from(agents.values()).filter(agent => agent.id.startsWith('demo-agent-')).length,
     timestamp: new Date().toISOString()
   });
 });
@@ -573,7 +597,12 @@ io.on('connection', (socket) => {
       }
     });
   } else {
-    // dashboard client
+    // dashboard client - ensure demo agents are present
+    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+    if (!hasDemoAgents) {
+      console.log('No demo agents found for dashboard, adding them...');
+      addDemoAgents();
+    }
     socket.emit('dashboard:agents', getAgentsPublic());
   }
 });
