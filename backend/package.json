@@ -8,7 +8,8 @@
     "server:dev": "cd server && npm run dev",
     "server:start": "cd server && npm start",
     "agent:start": "cd agent && npm start",
-    "start": "npm run server:start",
+    "start": "node server-agent-start.js",
+    "start:server": "npm run server:start",
     "install-all": "npm install && cd server && npm install && cd ../agent && npm install",
     "clean": "rm -rf server/node_modules agent/node_modules server/package-lock.json agent/package-lock.json"
   },
