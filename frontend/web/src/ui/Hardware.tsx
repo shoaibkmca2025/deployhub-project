@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { serverOrigin, apiGet } from './api'
+import { serverOrigin, apiGet, apiPost } from './api'
 
 type Agent = { id: string; name: string; status: 'online'|'offline'; specs?: any }
 
 export default function Hardware() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
+  const [loading, setLoading] = useState(false)
   const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
@@ -52,6 +53,20 @@ export default function Hardware() {
   }, [])
 
   const online = useMemo(() => agents.filter(a=>a.status==='online'), [agents])
+  
+  const toggleDemoAgents = async () => {
+    setLoading(true)
+    try {
+      const hasDemoAgents = agents.some(a => a.id.startsWith('demo-agent-'))
+      const action = hasDemoAgents ? 'remove' : 'add'
+      const response = await apiPost('/api/demo-agents', { action })
+      setAgents(response.agents)
+    } catch (error) {
+      console.error('Failed to toggle demo agents:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-100">
@@ -90,10 +105,59 @@ export default function Hardware() {
           <p className="text-xl text-gray-300">Connect and monitor your personal devices.</p>
         </div>
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <a href={`${serverOrigin}/public/agents/install-windows.ps1`} className="px-8 py-3 border border-amber-400 text-amber-400 font-semibold rounded-lg hover:bg-amber-400 hover:text-slate-900 transition-all">Download Windows Agent</a>
             <a href={`${serverOrigin}/public/agents/install-linux.sh`} className="px-8 py-3 border border-cyan-400 text-cyan-400 font-semibold rounded-lg hover:bg-cyan-400 hover:text-slate-900 transition-all">Download Linux Agent</a>
+            <button 
+              onClick={toggleDemoAgents}
+              disabled={loading}
+              className="px-8 py-3 border border-purple-400 text-purple-400 font-semibold rounded-lg hover:bg-purple-400 hover:text-slate-900 transition-all disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : agents.some(a => a.id.startsWith('demo-agent-')) ? 'Remove Demo Agents' : 'Add Demo Agents'}
+            </button>
           </div>
+          
+          {agents.length === 0 && (
+            <div className="text-center mb-12 p-8 glass-effect rounded-xl border border-gray-600">
+              <h3 className="text-xl font-semibold mb-4">No devices connected yet</h3>
+              <p className="text-gray-300 mb-6">
+                To see your devices here, you need to install and run the DeployHub agent on your machines.
+              </p>
+              <div className="space-y-4 text-left max-w-2xl mx-auto">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-cyan-400 text-slate-900 rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                  <div>
+                    <p className="font-semibold">Download the agent script</p>
+                    <p className="text-sm text-gray-400">Click the download buttons above for your operating system</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-cyan-400 text-slate-900 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                  <div>
+                    <p className="font-semibold">Run the installation script</p>
+                    <p className="text-sm text-gray-400">Execute the downloaded script on your machine</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-cyan-400 text-slate-900 rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                  <div>
+                    <p className="font-semibold">Your device will appear here</p>
+                    <p className="text-sm text-gray-400">Once connected, you can deploy applications to it</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6">
+                <p className="text-sm text-gray-400 mb-2">Want to see how it works? Try the demo:</p>
+                <button 
+                  onClick={toggleDemoAgents}
+                  disabled={loading}
+                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Loading...' : 'Show Demo Devices'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">

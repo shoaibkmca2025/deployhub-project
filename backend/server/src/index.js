@@ -62,6 +62,69 @@ const users = new Map(); // userId -> { id, email, password, createdAt }
 const tokens = new Map(); // token -> { userId, createdAt, expiresAt }
 const deploymentLinks = new Map(); // linkId -> { repoUrl, branch, buildCommand, startCommand, env, timestamp }
 
+// Add demo agents for testing
+const addDemoAgents = () => {
+  const demoAgents = [
+    {
+      id: 'demo-agent-1',
+      name: 'Demo Windows Agent',
+      status: 'online',
+      lastSeen: Date.now(),
+      specs: {
+        platform: 'win32',
+        arch: 'x64',
+        cpuCount: 8,
+        load1m: 0.45,
+        memory: { 
+          freeMb: 8192, 
+          totalMb: 16384,
+          usedMb: 8192,
+          usagePercent: 50
+        },
+        uptime: 86400,
+        hostname: 'demo-windows-pc',
+        nodeVersion: 'v18.17.0',
+        agentVersion: '1.0.0'
+      },
+      socketId: 'demo-socket-1',
+      createdAt: Date.now() - 3600000 // 1 hour ago
+    },
+    {
+      id: 'demo-agent-2',
+      name: 'Demo Linux Server',
+      status: 'online',
+      lastSeen: Date.now(),
+      specs: {
+        platform: 'linux',
+        arch: 'x64',
+        cpuCount: 4,
+        load1m: 0.23,
+        memory: { 
+          freeMb: 4096, 
+          totalMb: 8192,
+          usedMb: 4096,
+          usagePercent: 50
+        },
+        uptime: 172800,
+        hostname: 'demo-linux-server',
+        nodeVersion: 'v18.17.0',
+        agentVersion: '1.0.0'
+      },
+      socketId: 'demo-socket-2',
+      createdAt: Date.now() - 7200000 // 2 hours ago
+    }
+  ];
+  
+  demoAgents.forEach(agent => {
+    agents.set(agent.id, agent);
+  });
+  
+  console.log('Demo agents added:', demoAgents.length);
+};
+
+// Add demo agents on startup
+addDemoAgents();
+
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
   const now = Date.now();
@@ -217,6 +280,23 @@ function requireAuth(req, res, next) {
 
 app.get('/api/agents', (req, res) => {
   res.json({ agents: getAgentsPublic() });
+});
+
+// Add/remove demo agents endpoint
+app.post('/api/demo-agents', (req, res) => {
+  const action = req.body?.action || 'add';
+  
+  if (action === 'add') {
+    addDemoAgents();
+    res.json({ message: 'Demo agents added', agents: getAgentsPublic() });
+  } else if (action === 'remove') {
+    // Remove demo agents
+    const demoAgentIds = ['demo-agent-1', 'demo-agent-2'];
+    demoAgentIds.forEach(id => agents.delete(id));
+    res.json({ message: 'Demo agents removed', agents: getAgentsPublic() });
+  } else {
+    res.status(400).json({ error: 'Invalid action. Use "add" or "remove"' });
+  }
 });
 
 // Public health check for agents
