@@ -125,15 +125,22 @@ const addDemoAgents = () => {
 // Add demo agents on startup
 addDemoAgents();
 
-// Ensure demo agents are always available - add them every 10 seconds if missing
+// Ensure demo agents are always available - add them every 5 seconds if missing
 // This is critical for Render deployments where agents might not persist
 setInterval(() => {
-  const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
-  if (!hasDemoAgents) {
-    console.log('Demo agents missing, re-adding...');
+  // In production (Render), always add demo agents to ensure they're available
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production environment: ensuring demo agents are available...');
     addDemoAgents();
+  } else {
+    // In development, only add if missing
+    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+    if (!hasDemoAgents) {
+      console.log('Demo agents missing, re-adding...');
+      addDemoAgents();
+    }
   }
-}, 10000);
+}, 5000);
 
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
@@ -555,6 +562,13 @@ app.post('/api/ai/suggest', (req, res) => {
 io.on('connection', (socket) => {
   const kind = socket.handshake.query.kind; // 'agent' or 'dashboard'
 
+  // For dashboard clients, ensure demo agents are available
+  if (kind === 'dashboard') {
+    console.log('Dashboard client connected, ensuring demo agents are available...');
+    addDemoAgents();
+    socket.emit('dashboard:agents', getAgentsPublic());
+  }
+  
   if (kind === 'agent') {
     const agentName = socket.handshake.query.name || `agent-${socket.id.slice(0,6)}`;
     const agentId = socket.handshake.query.agentId || uuidv4();
