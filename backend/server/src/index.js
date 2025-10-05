@@ -125,14 +125,15 @@ const addDemoAgents = () => {
 // Add demo agents on startup
 addDemoAgents();
 
-// Ensure demo agents are always available - add them every 30 seconds if missing
+// Ensure demo agents are always available - add them every 10 seconds if missing
+// This is critical for Render deployments where agents might not persist
 setInterval(() => {
   const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
   if (!hasDemoAgents) {
     console.log('Demo agents missing, re-adding...');
     addDemoAgents();
   }
-}, 30000);
+}, 10000);
 
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
@@ -288,11 +289,17 @@ function requireAuth(req, res, next) {
 }
 
 app.get('/api/agents', (req, res) => {
-  // Ensure demo agents are always present
-  const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
-  if (!hasDemoAgents) {
-    console.log('No demo agents found, adding them...');
+  // Always add demo agents for Render deployment
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production environment detected, ensuring demo agents are available...');
     addDemoAgents();
+  } else {
+    // In development, only add if missing
+    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
+    if (!hasDemoAgents) {
+      console.log('No demo agents found, adding them...');
+      addDemoAgents();
+    }
   }
   
   res.json({ agents: getAgentsPublic() });
@@ -597,12 +604,9 @@ io.on('connection', (socket) => {
       }
     });
   } else {
-    // dashboard client - ensure demo agents are present
-    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
-    if (!hasDemoAgents) {
-      console.log('No demo agents found for dashboard, adding them...');
-      addDemoAgents();
-    }
+    // dashboard client - always ensure demo agents are present for Render deployment
+    console.log('Dashboard client connected, ensuring demo agents are available...');
+    addDemoAgents();
     socket.emit('dashboard:agents', getAgentsPublic());
   }
 });
