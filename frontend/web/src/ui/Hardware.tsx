@@ -18,7 +18,9 @@ export default function Hardware() {
       try {
         const response = await apiGet('/api/agents')
         console.log('Hardware: Fetched agents via API:', response.agents)
-        setAgents(response.agents || [])
+        if (response.agents && response.agents.length > 0) {
+          setAgents(response.agents)
+        }
       } catch (error) {
         console.error('Hardware: Failed to fetch agents via API:', error)
       }
@@ -26,12 +28,23 @@ export default function Hardware() {
     
     fetchAgents()
     
-    const socket = io(serverOrigin, { transports: ['websocket'], query: { kind: 'dashboard' } })
+    const socket = io(serverOrigin, { 
+      transports: ['websocket'], 
+      query: { kind: 'dashboard' },
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000
+    })
     socketRef.current = socket
     
     socket.on('connect', () => {
       console.log('Hardware: Socket connected')
       setConnectionStatus('connected')
+      
+      // Explicitly identify as dashboard after connection
+      socket.emit('identify', { kind: 'dashboard' })
+      
+      // Fetch agents again after connection
+      fetchAgents()
     })
     
     socket.on('disconnect', () => {
@@ -41,7 +54,9 @@ export default function Hardware() {
     
     socket.on('dashboard:agents', (list: Agent[]) => {
       console.log('Hardware: Received agents via socket:', list)
-      setAgents(list)
+      if (list && list.length > 0) {
+        setAgents(list)
+      }
     })
     
     socket.on('connect_error', (error) => {
@@ -49,7 +64,15 @@ export default function Hardware() {
       setConnectionStatus('disconnected')
     })
     
-    return () => { socket.disconnect() }
+    // Set up periodic agent refresh
+    const refreshInterval = setInterval(() => {
+      fetchAgents()
+    }, 3000)
+    
+    return () => { 
+      socket.disconnect()
+      clearInterval(refreshInterval)
+    }
   }, [])
 
   const online = useMemo(() => agents.filter(a=>a.status==='online'), [agents])

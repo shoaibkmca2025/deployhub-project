@@ -55,6 +55,9 @@ const io = new SocketIOServer(server, {
   transports: ['websocket', 'polling']
 });
 
+// Always ensure demo agents exist at startup
+addDemoAgents();
+
 // Enhanced in-memory state with persistence
 const agents = new Map(); // agentId -> { id, name, status, lastSeen, specs, socketId, createdAt }
 const deployments = new Map(); // deploymentId -> { id, agentId, repoUrl, status, logs: [], name, env: {}, createdAt, updatedAt }
@@ -64,6 +67,9 @@ const deploymentLinks = new Map(); // linkId -> { repoUrl, branch, buildCommand,
 
 // Add demo agents for testing
 const addDemoAgents = () => {
+  // Clear any existing agents first to ensure clean state
+  agents.clear();
+  
   const demoAgents = [
     {
       id: 'demo-agent-1',
@@ -120,21 +126,22 @@ const addDemoAgents = () => {
   });
   
   console.log('Demo agents added:', demoAgents.length);
+  return demoAgents;
 };
 
 // Add demo agents on startup
 addDemoAgents();
 
-// Ensure demo agents are always available - add them every 2 seconds if missing
+// Ensure demo agents are always available - add them every 1 second
 // This is critical for Render deployments where agents might not persist
 setInterval(() => {
   // Always add demo agents to ensure they're available, regardless of environment
   console.log('Ensuring demo agents are available...');
   addDemoAgents();
   
-  // Force update all connected dashboard clients with the latest agent data
-  io.to('dashboard').emit('dashboard:agents', getAgentsPublic());
-}, 2000);
+  // Force update all connected clients with the latest agent data
+  io.emit('dashboard:agents', getAgentsPublic());
+}, 1000);
 
 // Add cleanup for expired tokens and deployment links
 setInterval(() => {
@@ -290,20 +297,16 @@ function requireAuth(req, res, next) {
 }
 
 app.get('/api/agents', (req, res) => {
-  // Always add demo agents for Render deployment
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production environment detected, ensuring demo agents are available...');
-    addDemoAgents();
-  } else {
-    // In development, only add if missing
-    const hasDemoAgents = Array.from(agents.values()).some(agent => agent.id.startsWith('demo-agent-'));
-    if (!hasDemoAgents) {
-      console.log('No demo agents found, adding them...');
-      addDemoAgents();
-    }
-  }
+  // Always add demo agents regardless of environment
+  console.log('API request for agents, ensuring demo agents are available...');
+  const demoAgents = addDemoAgents();
   
-  res.json({ agents: getAgentsPublic() });
+  // Force a direct response with demo agents
+  res.json({ 
+    agents: getAgentsPublic(),
+    demoAgentsAdded: true,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Add/remove demo agents endpoint
@@ -556,13 +559,17 @@ app.post('/api/ai/suggest', (req, res) => {
 io.on('connection', (socket) => {
   const kind = socket.handshake.query.kind; // 'agent' or 'dashboard'
 
-  // For dashboard clients, ensure demo agents are available
-  if (kind === 'dashboard') {
+  // Always add demo agents on any connection
+  const demoAgents = addDemoAgents();
+  
+  // Immediately send agents to all clients
+  io.emit('dashboard:agents', getAgentsPublic());
+
+  // Assume all web clients are dashboard clients initially
+  // This ensures agents are sent even if kind isn't specified
+  if (!kind || kind === 'dashboard') {
     console.log('Dashboard client connected, ensuring demo agents are available...');
     socket.join('dashboard');
-    
-    // Always add demo agents when dashboard connects
-    addDemoAgents();
     
     // Force update with latest agent data
     socket.emit('dashboard:agents', getAgentsPublic());
@@ -571,7 +578,12 @@ io.on('connection', (socket) => {
     setTimeout(() => {
       addDemoAgents();
       socket.emit('dashboard:agents', getAgentsPublic());
-    }, 1000);
+    }, 500);
+    
+    // And once more to be absolutely certain
+    setTimeout(() => {
+      io.emit('dashboard:agents', getAgentsPublic());
+    }, 1500);
   }
   
   if (kind === 'agent') {
